@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Optional: ignore project outputs if they contain user work
+# workspaces/writing/projects/*.md
+# workspaces/research/projects/*.md
+# workspaces/code/projects/*.md

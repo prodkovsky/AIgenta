@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIgenta Search</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .search-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-box button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .search-box button:hover {
+            transform: translateY(-2px);
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .filter-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .results-info {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .results {
+            display: grid;
+            gap: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .result-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .result-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .result-title a:hover {
+            color: #667eea;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .result-meta span {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .result-type {
+            background: #667eea !important;
+            color: white !important;
+        }
+
+        .result-snippet {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .result-path {
+            font-size: 0.8em;
+            color: #888;
+            font-family: monospace;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .stats {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stats h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .result-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 AIgenta Search</h1>
+            <p>Search across all markdown files in the AIgenta system</p>
+        </div>
+
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by title, content, or headings... (Ctrl+K)" autofocus>
+                <button onclick="performSearch()">Search</button>
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="typeFilter">Type</label>
+                    <select id="typeFilter" onchange="performSearch()">
+                        <option value="">All Types</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="workspaceFilter">Workspace</label>
+                    <select id="workspaceFilter" onchange="performSearch()">
+                        <option value="">All Workspaces</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="sortBy">Sort By</label>
+                    <select id="sortBy" onchange="performSearch()">
+                        <option value="relevance">Relevance</option>
+                        <option value="title">Title (A-Z)</option>
+                        <option value="updated">Last Updated</option>
+                        <option value="lines">Line Count</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="results-info" id="resultsInfo"></div>
+            <div class="results" id="results"></div>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <h3>📊 Search Index Statistics</h3>
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        let searchIndex = null;
+
+        // Load search index
+        async function loadSearchIndex() {
+            try {
+                const response = await fetch('search-index.json');
+                searchIndex = await response.json();
+                
+                // Populate filters
+                populateFilters();
+                
+                // Show stats
+                showStats();
+                
+                // Show total files in results info
+                document.getElementById('resultsInfo').textContent = 
+                    `Loaded ${searchIndex.total_entries} files from search index`;
+                
+            } catch (error) {
+                console.error('Error loading search index:', error);
+                document.getElementById('results').innerHTML = 
+                    '<div class="no-results">❌ Error loading search index. Please run: python tools/generate_search_index.py</div>';
+            }
+        }
+
+        function populateFilters() {
+            // Type filter
+            const typeFilter = document.getElementById('typeFilter');
+            Object.keys(searchIndex.aggregations.types).sort().forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = `${type} (${searchIndex.aggregations.types[type]})`;
+                typeFilter.appendChild(option);
+            });
+
+            // Workspace filter
+            const workspaceFilter = document.getElementById('workspaceFilter');
+            Object.keys(searchIndex.aggregations.workspaces).sort().forEach(workspace => {
+                const option = document.createElement('option');
+                option.value = workspace;
+                option.textContent = `${workspace} (${searchIndex.aggregations.workspaces[workspace]})`;
+                workspaceFilter.appendChild(option);
+            });
+        }
+
+        function showStats() {
+            const statsDiv = document.getElementById('stats');
+            const statsGrid = document.getElementById('statsGrid');
+            
+            statsDiv.style.display = 'block';
+            
+            const stats = [
+                { label: 'Total Files', value: searchIndex.total_entries },
+                { label: 'Types', value: Object.keys(searchIndex.aggregations.types).length },
+                { label: 'Workspaces', value: Object.keys(searchIndex.aggregations.workspaces).length },
+                { label: 'Last Updated', value: new Date(searchIndex.generated).toLocaleDateString() },
+            ];
+            
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="stat-item">
+                    <div class="stat-label">${stat.label}</div>
+                    <div class="stat-value">${stat.value}</div>
+                </div>
+            `).join('');
+        }
+
+        function performSearch() {
+            if (!searchIndex) return;
+
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            const workspaceFilter = document.getElementById('workspaceFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            let results = searchIndex.entries;
+
+            // Apply filters
+            if (query) {
+                results = results.filter(entry => {
+                    const searchableText = [
+                        entry.title,
+                        entry.snippet,
+                        ...entry.headings
+                    ].join(' ').toLowerCase();
+                    
+                    return searchableText.includes(query);
+                });
+            }
+
+            if (typeFilter) {
+                results = results.filter(entry => entry.type === typeFilter);
+            }
+
+            if (workspaceFilter) {
+                results = results.filter(entry => entry.workspace === workspaceFilter);
+            }
+
+            // Sort results
+            results = sortResults(results, sortBy, query);
+
+            // Display results
+            displayResults(results, query);
+        }
+
+        function sortResults(results, sortBy, query) {
+            return results.sort((a, b) => {
+                switch (sortBy) {
+                    case 'title':
+                        return a.title.localeCompare(b.title);
+                    case 'updated':
+                        return new Date(b.updated) - new Date(a.updated);
+                    case 'lines':
+                        return b.lines - a.lines;
+                    case 'relevance':
+                    default:
+                        if (!query) return 0;
+                        
+                        // Calculate relevance score
+                        const scoreA = calculateRelevance(a, query);
+                        const scoreB = calculateRelevance(b, query);
+                        return scoreB - scoreA;
+                }
+            });
+        }
+
+        function calculateRelevance(entry, query) {
+            let score = 0;
+            
+            // Title match is most important
+            if (entry.title.toLowerCase().includes(query)) {
+                score += 10;
+            }
+            
+            // Headings match
+            entry.headings.forEach(heading => {
+                if (heading.toLowerCase().includes(query)) {
+                    score += 5;
+                }
+            });
+            
+            // Snippet match
+            const snippetMatches = (entry.snippet.toLowerCase().match(new RegExp(query, 'g')) || []).length;
+            score += snippetMatches;
+            
+            return score;
+        }
+
+        function displayResults(results, query) {
+            const resultsDiv = document.getElementById('results');
+            const resultsInfo = document.getElementById('resultsInfo');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">No results found. Try adjusting your search or filters.</div>';
+                resultsInfo.textContent = '0 results';
+                return;
+            }
+
+            resultsInfo.textContent = `Found ${results.length} result${results.length !== 1 ? 's' : ''}`;
+            
+            resultsDiv.innerHTML = results.map(result => {
+                const highlightedSnippet = highlightText(result.snippet, query);
+                const highlightedTitle = highlightText(result.title, query);
+                
+                return `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <div>
+                                <div class="result-title">
+                                    <a href="${result.path}" target="_blank">${highlightedTitle}</a>
+                                </div>
+                                <div class="result-meta">
+                                    <span class="result-type">${result.type}</span>
+                                    <span>${result.workspace}</span>
+                                    ${result.category ? `<span>${result.category}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-snippet">${highlightedSnippet}</div>
+                        <div class="result-path">📁 ${result.path} · ${result.lines} lines · Updated: ${result.updated}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+
+        // Keyboard shortcut (Ctrl+K)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
+
+        // Search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Load search index on page load
+        loadSearchIndex();
+    </script>
+</body>
+</html>

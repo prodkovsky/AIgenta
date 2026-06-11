@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIgenta Writer System - Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #667eea;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .control-panel {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        select, input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 300px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .output-box {
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .pill {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .pill:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .pill.active {
+            background: #764ba2;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: white;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.assistant {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .template-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .template-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .template-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status.complete {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.pending {
+            background: #ff9800;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 AIgenta Writer System</h1>
+            <p>Folder-Based AI Writing Workspace - Test Interface</p>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">Style Tester</div>
+            <div class="tab" onclick="switchTab(1)">Dialogue Interface</div>
+            <div class="tab" onclick="switchTab(2)">Project Creator</div>
+            <div class="tab" onclick="switchTab(3)">System Status</div>
+        </div>
+
+        <!-- Tab 1: Style Tester -->
+        <div class="tab-content active">
+            <div class="info-box">
+                <strong>Style Tester:</strong> Select a Laura style and rhetoric devices, then write or paste text to see how the AI would transform it.
+            </div>
+
+            <div class="control-panel">
+                <div class="control-group">
+                    <label>Select Laura Style:</label>
+                    <select id="styleSelect">
+                        <option value="neutral">Neutral - Balanced, general-purpose</option>
+                        <option value="academic">Academic - Scholarly, citation-heavy</option>
+                        <option value="technical">Technical - Clear, precise documentation</option>
+                        <option value="poetic">Poetic - Evocative, rhythmic</option>
+                        <option value="screenwriter">Screenwriter - Visual, dialogue-driven</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Select Rhetorical Devices:</label>
+                    <div class="pill-container">
+                        <div class="pill" onclick="togglePill(this)" data-device="ethos">Ethos</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="logos">Logos</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="pathos">Pathos</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="tricolon">Tricolon</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="anaphora">Anaphora</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="antithesis">Antithesis</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="chiasmus">Chiasmus</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="erotesma">Erotesma</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="euphemism">Euphemism</div>
+                        <div class="pill" onclick="togglePill(this)" data-device="hyperbole">Hyperbole</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Your Text:</label>
+                    <textarea id="inputText" placeholder="Enter your text here..."></textarea>
+                </div>
+
+                <button onclick="applyStyle()">🎨 Apply Style & Rhetoric</button>
+            </div>
+
+            <div class="output-box" id="styledOutput">
+                Styled output will appear here...
+            </div>
+        </div>
+
+        <!-- Tab 2: Dialogue Interface -->
+        <div class="tab-content">
+            <div class="info-box">
+                <strong>Dialogue Interface:</strong> Chat with AI that has full access to the AIgenta folder structure and context.
+            </div>
+
+            <div class="control-panel">
+                <div class="control-group">
+                    <label>Context Mode:</label>
+                    <select id="contextMode">
+                        <option value="full">Full Context (All files loaded)</option>
+                        <option value="writing">Writing Workspace Only</option>
+                        <option value="minimal">Minimal (CLAUDE.md only)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chatContainer">
+                <div class="message assistant">
+                    Hi! I'm your AI writing assistant with full access to the AIgenta folder system. I can help you write in any of the 5 Laura styles, use rhetorical devices, and create structured content. What would you like to write today?
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <input type="text" id="chatInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">💬 Send Message</button>
+            </div>
+        </div>
+
+        <!-- Tab 3: Project Creator -->
+        <div class="tab-content">
+            <div class="info-box">
+                <strong>Project Creator:</strong> Use templates to generate complete writing projects.
+            </div>
+
+            <div class="grid-2">
+                <div class="template-card" onclick="selectTemplate('essay')">
+                    <h3>📝 Essay Template</h3>
+                    <p>Structured essay with introduction, body paragraphs, and conclusion</p>
+                    <span class="status complete">Complete</span>
+                </div>
+
+                <div class="template-card" onclick="selectTemplate('article')">
+                    <h3>📰 Article Template</h3>
+                    <p>Blog post or article format with sections and examples</p>
+                    <span class="status complete">Complete</span>
+                </div>
+
+                <div class="template-card" onclick="selectTemplate('screenplay')">
+                    <h3>🎬 Screenplay Template</h3>
+                    <p>Scene-based screenplay format with dialogue and action</p>
+                    <span class="status complete">Complete</span>
+                </div>
+
+                <div class="template-card" onclick="selectTemplate('technical')">
+                    <h3>⚙️ Technical Doc Template</h3>
+                    <p>API documentation or technical guide format</p>
+                    <span class="status complete">Complete</span>
+                </div>
+            </div>
+
+            <div class="control-panel" style="margin-top: 20px;">
+                <div class="control-group">
+                    <label>Project Topic:</label>
+                    <input type="text" id="projectTopic" placeholder="Enter your project topic...">
+                </div>
+                <button onclick="createProject()">🚀 Create Project</button>
+            </div>
+
+            <div class="output-box" id="projectOutput">
+                Project output will appear here...
+            </div>
+        </div>
+
+        <!-- Tab 4: System Status -->
+        <div class="tab-content">
+            <div class="info-box">
+                <strong>System Status:</strong> Overview of what's been built in the AIgenta Writer System.
+            </div>
+
+            <h3 style="margin-bottom: 15px;">✅ Completed Components</h3>
+            <ul style="line-height: 2; margin-bottom: 30px;">
+                <li><span class="status complete">COMPLETE</span> CLAUDE.md (AI Entry Point)</li>
+                <li><span class="status complete">COMPLETE</span> SECURITY.md (Yolo Mode Safety)</li>
+                <li><span class="status complete">COMPLETE</span> AGENTS.md (Contributor Guidelines)</li>
+                <li><span class="status complete">COMPLETE</span> Writing Workspace Context</li>
+                <li><span class="status complete">COMPLETE</span> Research Workspace Context</li>
+                <li><span class="status complete">COMPLETE</span> Code Workspace Context</li>
+                <li><span class="status complete">COMPLETE</span> Laura Styles (5/5): Academic, Technical, Poetic, Screenwriter, Neutral</li>
+                <li><span class="status complete">COMPLETE</span> Rhetoric Devices (10/10): Ethos, Logos, Pathos, Tricolon, Anaphora, Antithesis, Chiasmus, Erotesma, Euphemism, Hyperbole</li>
+                <li><span class="status complete">COMPLETE</span> Writing Templates (4/4): Essay, Article, Screenplay, Technical Doc</li>
+                <li><span class="status complete">COMPLETE</span> API Integration Docs (2/2): OpenRouter, Ollama</li>
+                <li><span class="status complete">COMPLETE</span> Memory System (decisions.md, learnings.md)</li>
+                <li><span class="status complete">COMPLETE</span> README Documentation</li>
+                <li><span class="status complete">COMPLETE</span> Demo UI (This Interface)</li>
+            </ul>
+
+            <h3 style="margin-bottom: 15px;">🚀 Future Extensions</h3>
+            <ul style="line-height: 2;">
+                <li><span class="status pending">PENDING</span> Additional Laura Styles (Journalistic, Conversational, etc.)</li>
+                <li><span class="status pending">PENDING</span> More API Integrations (Together AI, Anthropic Direct)</li>
+                <li><span class="status pending">PENDING</span> Automated Validation Scripts</li>
+            </ul>
+
+            <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                <strong>Note:</strong> This is a static HTML demo. To fully integrate with LLMs (OpenRouter, Ollama, etc.), you'll need to add API keys and backend connection logic.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach((tab, i) => {
+                if (i === index) {
+                    tab.classList.add('active');
+                    contents[i].classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                    contents[i].classList.remove('active');
+                }
+            });
+        }
+
+        function togglePill(pill) {
+            pill.classList.toggle('active');
+        }
+
+        function applyStyle() {
+            const style = document.getElementById('styleSelect').value;
+            const input = document.getElementById('inputText').value;
+            const output = document.getElementById('styledOutput');
+            
+            if (!input) {
+                output.textContent = 'Please enter some text first.';
+                return;
+            }
+
+            const activePills = document.querySelectorAll('.pill.active');
+            const devices = Array.from(activePills).map(pill => pill.dataset.device);
+            
+            // Demo transformation (would call actual AI in production)
+            output.innerHTML = `<strong>Style Applied: ${style.toUpperCase()}</strong><br>` +
+                             `<strong>Rhetoric Devices: ${devices.join(', ') || 'none'}</strong><br><br>` +
+                             `<em>(In production, this would send your text + context files to an LLM API)</em><br><br>` +
+                             `Original text:<br>${input}<br><br>` +
+                             `Transformed version would appear here based on the selected Laura style and rhetorical devices from the markdown files.`;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const container = document.getElementById('chatContainer');
+            
+            if (!input.value.trim()) return;
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.textContent = input.value;
+            container.appendChild(userMsg);
+            
+            // Simulate AI response
+            setTimeout(() => {
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'message assistant';
+                aiMsg.textContent = `I received your message: "${input.value}". In production, I would process this with full access to the AIgenta folder structure and respond using the appropriate Laura style and context.`;
+                container.appendChild(aiMsg);
+                container.scrollTop = container.scrollHeight;
+            }, 1000);
+            
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function selectTemplate(type) {
+            alert(`Template selected: ${type}. This would load the corresponding template from workspaces/writing/templates/${type}-template.md`);
+        }
+
+        function createProject() {
+            const topic = document.getElementById('projectTopic').value;
+            const output = document.getElementById('projectOutput');
+            
+            if (!topic) {
+                output.textContent = 'Please enter a project topic first.';
+                return;
+            }
+            
+            output.innerHTML = `<strong>Project Created: ${topic}</strong><br><br>` +
+                             `<em>(In production, this would generate a complete project using the selected template and save it to workspaces/writing/projects/2026-06-08_${topic.toLowerCase().replace(/\s+/g, '-')}.md)</em><br><br>` +
+                             `The project would include all sections from the template, filled with AI-generated content based on your topic.`;
+        }
+    </script>
+</body>
+</html>

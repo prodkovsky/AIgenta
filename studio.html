@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIgenta Studio — File-Aware Writing Workspace</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            color: #333;
+        }
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+        .sidebar h1 {
+            font-size: 1.3em;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-item {
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.7;
+        }
+        .nav-item:hover { opacity: 1; background: rgba(255,255,255,0.05); }
+        .nav-item.active { opacity: 1; background: rgba(102,126,234,0.3); border-left: 3px solid #667eea; }
+        .nav-icon { font-size: 1.2em; }
+        .folder-info {
+            margin-top: auto;
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.8em;
+            opacity: 0.6;
+        }
+        .folder-info button {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .folder-info button:hover { background: #764ba2; }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+        }
+        .card p.description {
+            color: #666;
+            margin-bottom: 16px;
+            font-size: 0.95em;
+        }
+
+        /* Load Screen */
+        .load-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+        }
+        .load-screen h2 { font-size: 2em; margin-bottom: 10px; color: #1a1a2e; }
+        .load-screen p { color: #666; margin-bottom: 30px; max-width: 500px; }
+        .load-screen button {
+            padding: 14px 32px;
+            font-size: 1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .load-screen button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .load-screen .note {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            color: #856404;
+            font-size: 0.85em;
+            max-width: 500px;
+            text-align: left;
+        }
+
+        /* Library Grid */
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        .lib-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .lib-card:hover { border-color: #667eea; transform: translateY(-2px); }
+        .lib-card h3 { font-size: 1em; margin-bottom: 6px; color: #1a1a2e; }
+        .lib-card .meta { font-size: 0.8em; color: #999; margin-bottom: 8px; text-transform: uppercase; }
+        .lib-card p { font-size: 0.9em; color: #555; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .lib-card.selected { border-color: #667eea; background: #f8f9ff; }
+
+        /* Composer */
+        .composer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) { .composer-grid { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        select, textarea, input[type="text"], input[type="range"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        select:focus, textarea:focus, input:focus { outline: none; border-color: #667eea; }
+        textarea { min-height: 120px; resize: vertical; font-family: 'Monaco', 'Menlo', monospace; }
+
+        .pill-container { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pill {
+            background: #e8e8e8;
+            color: #555;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .pill:hover { background: #d0d0d0; }
+        .pill.selected { background: #667eea; color: white; border-color: #764ba2; }
+
+        .prompt-preview {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+        .prompt-preview .label { color: #f9e2af; font-weight: bold; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .btn-secondary { background: #e8e8e8; color: #333; }
+        .btn-secondary:hover { background: #d0d0d0; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+        /* Ollama Panel */
+        .ollama-status {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+        }
+        .ollama-status.online { background: #d4edda; color: #155724; }
+        .ollama-status.offline { background: #f8d7da; color: #721c24; }
+
+        .output-area {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            margin-top: 16px;
+            line-height: 1.7;
+            font-family: 'Georgia', serif;
+        }
+        .output-area h1, .output-area h2, .output-area h3 { font-family: inherit; margin: 1em 0 0.5em; }
+        .output-area p { margin-bottom: 0.8em; }
+
+        .hidden { display: none !important; }
+
+        /* Modal for file preview */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h1>🎨 AIgenta Studio</h1>
+            <nav>
+                <div class="nav-item active" onclick="switchPanel('compose')" data-panel="compose">
+                    <span class="nav-icon">✏️</span> Compose
+                </div>
+                <div class="nav-item" onclick="switchPanel('library')" data-panel="library">
+                    <span class="nav-icon">📚</span> Library
+                </div>
+                <div class="nav-item" onclick="switchPanel('generate')" data-panel="generate">
+                    <span class="nav-icon">⚡</span> Generate
+                </div>
+                <div class="nav-item" onclick="switchPanel('status')" data-panel="status">
+                    <span class="nav-icon">📊</span> Status
+                </div>
+            </nav>
+            <div class="folder-info">
+                <div id="folderStatus">No folder loaded</div>
+                <button onclick="loadFolder()">📁 Load AIgenta Folder</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Load Screen -->
+            <div id="loadScreen" class="load-screen">
+                <h2>Welcome to AIgenta Studio</h2>
+                <p>Load your AIgenta folder to browse styles, rhetoric devices, and templates — then compose prompts and generate text with Ollama.</p>
+                <button onclick="loadFolder()">📁 Select AIgenta Folder</button>
+                <div class="note">
+                    <strong>Note:</strong> If served via localhost, files load automatically. If opened as a file, use Chrome/Edge, or run:<br>
+                    <code>python -m http.server 8000</code> then open <code>http://localhost:8000/studio.html</code>
+                </div>
+            </div>
+
+            <!-- Compose Panel -->
+            <div id="composePanel" class="panel">
+                <div class="card">
+                    <h2>✏️ Compose Prompt</h2>
+                    <p class="description">Select a style, rhetoric devices, and template — then enter your topic to build a complete prompt.</p>
+                    <div class="composer-grid">
+                        <div>
+                            <div class="form-group">
+                                <label>Laura Style</label>
+                                <select id="styleSelect" onchange="updatePreview()">
+                                    <option value="">— Select a style —</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Rhetorical Devices</label>
+                                <div id="rhetoricPills" class="pill-container"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Template (optional)</label>
+                                <select id="templateSelect" onchange="updatePreview()">
+                                    <option value="">— No template —</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Your Topic / Prompt</label>
+                                <textarea id="userPrompt" placeholder="e.g., Write a technical blog post about database indexing..." oninput="updatePreview()"></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label>System Prompt Preview</label>
+                                <div id="systemPreview" class="prompt-preview">Select a style to see the system prompt...</div>
+                                <div class="btn-group">
+                                    <button class="btn btn-secondary" onclick="copySystemPrompt()">📋 Copy System</button>
+                                    <button class="btn btn-secondary" onclick="copyFullPrompt()">📋 Copy Full</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Estimated Tokens: <span id="tokenCount">0</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Library Panel -->
+            <div id="libraryPanel" class="panel">
+                <div class="card">
+                    <h2>📚 Library</h2>
+                    <p class="description">Browse all loaded styles, rhetoric devices, and templates. Click any card to read the full content.</p>
+                </div>
+                <h3 style="margin: 20px 0 12px; color: #555;">Styles</h3>
+                <div id="stylesLibrary" class="library-grid"></div>
+                <h3 style="margin: 20px 0 12px; color: #555;">Rhetoric Devices</h3>
+                <div id="rhetoricLibrary" class="library-grid"></div>
+                <h3 style="margin: 20px 0 12px; color: #555;">Templates</h3>
+                <div id="templatesLibrary" class="library-grid"></div>
+            </div>
+
+            <!-- Generate Panel -->
+            <div id="generatePanel" class="panel">
+                <div class="card">
+                    <h2>⚡ Generate with Ollama</h2>
+                    <p class="description">Generate text locally using Ollama. Make sure Ollama is running with CORS enabled.</p>
+                    <div id="ollamaStatus" class="ollama-status offline">Checking Ollama...</div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <select id="ollamaModel">
+                            <option value="dolphin-llama3:8b">dolphin-llama3:8b (ready)</option>
+                            <option value="deepseek-r1:14b">deepseek-r1:14b (ready)</option>
+                            <option value="llama2:latest">llama2:latest (ready)</option>
+                            <option value="llama3.1:8b">llama3.1:8b (downloading...)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature: <span id="tempValue">0.7</span></label>
+                        <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7" oninput="document.getElementById('tempValue').textContent=this.value">
+                    </div>
+                    <div class="form-group">
+                        <label>Your Prompt</label>
+                        <textarea id="generatePrompt" placeholder="Enter your topic here, or build one in the Compose tab..."></textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="generateWithOllama()">▶ Generate</button>
+                        <button class="btn btn-secondary" onclick="clearOutput()">Clear</button>
+                    </div>
+                    <div id="generateOutput" class="output-area hidden"></div>
+                </div>
+                <div class="card" style="margin-top: 20px;">
+                    <h3>🔧 Setup Instructions</h3>
+                    <p class="description">If Ollama is not detected:</p>
+                    <ol style="margin-left: 20px; line-height: 2;">
+                        <li>Install Ollama: <code>brew install ollama</code></li>
+                        <li>Pull a model: <code>ollama pull llama3.1:8b</code></li>
+                        <li>Start with CORS: <code>OLLAMA_ORIGINS=* ollama serve</code></li>
+                        <li>Refresh this page</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div id="statusPanel" class="panel">
+                <div class="card">
+                    <h2>📊 System Status</h2>
+                    <p class="description">Overview of the AIgenta system files loaded from your folder.</p>
+                    <div id="statusContent"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Preview</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // =====================
+        // STATE
+        // =====================
+        const state = {
+            folderHandle: null,
+            styles: {},
+            rhetoric: {},
+            templates: {},
+            selectedRhetoric: new Set(),
+            selectedStyle: '',
+            selectedTemplate: ''
+        };
+
+        // =====================
+        // FILE LOADING (FS Access API → HTTP fetch → fallback)
+        // =====================
+        async function loadFolder() {
+            // If served via HTTP (localhost), use fetch automatically
+            if (window.location.protocol !== 'file:') {
+                document.getElementById('folderStatus').textContent = '📁 Loading via HTTP...';
+                await loadViaHttp();
+                return;
+            }
+            // Otherwise try File System Access API
+            if (!window.showDirectoryPicker) {
+                alert('File System Access API is not supported in this browser. Please serve this file via localhost:\n\npython -m http.server 8000\n\nThen open http://localhost:8000/studio.html');
+                return;
+            }
+            try {
+                const handle = await window.showDirectoryPicker();
+                state.folderHandle = handle;
+                document.getElementById('folderStatus').textContent = '📁 ' + handle.name;
+                await scanFolder();
+                showMainUI();
+                checkOllama();
+            } catch (err) {
+                console.error('Folder selection cancelled or failed:', err);
+            }
+        }
+
+        async function loadViaHttp() {
+            const paths = {
+                styles: 'workspaces/writing/styles/',
+                rhetoric: 'workspaces/writing/rhetoric/',
+                templates: 'workspaces/writing/templates/'
+            };
+            const knownFiles = {
+                styles: ['academic.md','technical.md','poetic.md','screenwriter.md','neutral.md'],
+                rhetoric: ['ethos.md','pathos.md','logos.md','tricolon.md','anaphora.md','antithesis.md','chiasmus.md','erotesma.md','euphemism.md','hyperbole.md'],
+                templates: ['essay-template.md','article-template.md','screenplay-template.md','technical-doc-template.md']
+            };
+
+            for (const [type, basePath] of Object.entries(paths)) {
+                state[type] = {};
+                for (const filename of knownFiles[type]) {
+                    try {
+                        const resp = await fetch(basePath + filename);
+                        if (resp.ok) {
+                            state[type][filename.replace('.md', '')] = await resp.text();
+                        }
+                    } catch (e) {
+                        console.warn(`Could not fetch ${basePath}${filename}:`, e);
+                    }
+                }
+            }
+
+            document.getElementById('folderStatus').textContent = '📁 AIgenta (HTTP)';
+            populateUI();
+            showMainUI();
+            checkOllama();
+        }
+
+        async function scanFolder() {
+            const paths = {
+                styles: 'workspaces/writing/styles/',
+                rhetoric: 'workspaces/writing/rhetoric/',
+                templates: 'workspaces/writing/templates/'
+            };
+
+            for (const [type, path] of Object.entries(paths)) {
+                state[type] = {};
+                try {
+                    const parts = path.split('/').filter(Boolean);
+                    let dir = state.folderHandle;
+                    for (const part of parts) {
+                        dir = await dir.getDirectoryHandle(part);
+                    }
+                    for await (const [name, handle] of dir.entries()) {
+                        if (handle.kind === 'file' && name.endsWith('.md')) {
+                            const file = await handle.getFile();
+                            const text = await file.text();
+                            state[type][name.replace('.md', '')] = text;
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Could not read ${path}:`, e);
+                }
+            }
+
+            populateUI();
+        }
+
+        // =====================
+        // UI POPULATION
+        // =====================
+        function populateUI() {
+            // Style dropdown
+            const styleSelect = document.getElementById('styleSelect');
+            styleSelect.innerHTML = '<option value="">— Select a style —</option>';
+            Object.keys(state.styles).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+                styleSelect.appendChild(opt);
+            });
+
+            // Rhetoric pills
+            const rhetoricContainer = document.getElementById('rhetoricPills');
+            rhetoricContainer.innerHTML = '';
+            Object.keys(state.rhetoric).forEach(name => {
+                const pill = document.createElement('div');
+                pill.className = 'pill';
+                pill.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+                pill.onclick = () => toggleRhetoric(name, pill);
+                rhetoricContainer.appendChild(pill);
+            });
+
+            // Template dropdown
+            const templateSelect = document.getElementById('templateSelect');
+            templateSelect.innerHTML = '<option value="">— No template —</option>';
+            Object.keys(state.templates).forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                templateSelect.appendChild(opt);
+            });
+
+            // Library
+            populateLibrary('stylesLibrary', state.styles, 'Style');
+            populateLibrary('rhetoricLibrary', state.rhetoric, 'Rhetoric');
+            populateLibrary('templatesLibrary', state.templates, 'Template');
+
+            // Status
+            populateStatus();
+        }
+
+        function populateLibrary(containerId, items, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            Object.entries(items).forEach(([name, content]) => {
+                const card = document.createElement('div');
+                card.className = 'lib-card';
+                const lines = content.split('\n').filter(l => l.trim());
+                const title = lines[0]?.replace('#', '').trim() || name;
+                const desc = lines[1]?.replace(/#{1,2}\s*/, '').trim() || '';
+                card.innerHTML = `
+                    <div class="meta">${type}</div>
+                    <h3>${title}</h3>
+                    <p>${desc}</p>
+                `;
+                card.onclick = () => openModal(title, content);
+                container.appendChild(card);
+            });
+        }
+
+        function populateStatus() {
+            const counts = {
+                'Root Files': ['CLAUDE.md', 'README.md', 'SECURITY.md', 'AGENTS.md', 'index.html'].filter(f => state.styles.academic !== undefined || f).length,
+                'Laura Styles': Object.keys(state.styles).length + '/5',
+                'Rhetoric Devices': Object.keys(state.rhetoric).length + '/10',
+                'Templates': Object.keys(state.templates).length + '/4'
+            };
+            const html = Object.entries(counts).map(([k, v]) =>
+                `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;">
+                    <span>${k}</span><strong>${v}</strong>
+                </div>`
+            ).join('');
+            document.getElementById('statusContent').innerHTML = html;
+        }
+
+        // =====================
+        // COMPOSER LOGIC
+        // =====================
+        function toggleRhetoric(name, pillEl) {
+            if (state.selectedRhetoric.has(name)) {
+                state.selectedRhetoric.delete(name);
+                pillEl.classList.remove('selected');
+            } else {
+                state.selectedRhetoric.add(name);
+                pillEl.classList.add('selected');
+            }
+            updatePreview();
+        }
+
+        function updatePreview() {
+            state.selectedStyle = document.getElementById('styleSelect').value;
+            state.selectedTemplate = document.getElementById('templateSelect').value;
+            const userPrompt = document.getElementById('userPrompt').value;
+
+            let systemPrompt = '';
+
+            if (state.selectedStyle && state.styles[state.selectedStyle]) {
+                const styleText = state.styles[state.selectedStyle];
+                const overview = extractSection(styleText, 'Overview') || extractSection(styleText, 'Purpose') || styleText.slice(0, 500);
+                systemPrompt += `## Style: ${state.selectedStyle}\n\n${overview}\n\n`;
+            }
+
+            if (state.selectedRhetoric.size > 0) {
+                systemPrompt += '## Rhetorical Devices\n\n';
+                state.selectedRhetoric.forEach(device => {
+                    const text = state.rhetoric[device] || '';
+                    const def = extractSection(text, 'Overview') || extractSection(text, 'Definition') || text.slice(0, 300);
+                    systemPrompt += `### ${device}\n${def}\n\n`;
+                });
+            }
+
+            if (state.selectedTemplate && state.templates[state.selectedTemplate]) {
+                const tmpl = state.templates[state.selectedTemplate];
+                systemPrompt += '## Template Structure\n\nUse the following structure:\n\n';
+                systemPrompt += tmpl.slice(0, 800) + '\n\n';
+            }
+
+            const fullPrompt = systemPrompt + (userPrompt ? `\n## User Request\n\n${userPrompt}` : '');
+
+            document.getElementById('systemPreview').textContent = fullPrompt || 'Select a style to see the system prompt...';
+            document.getElementById('tokenCount').textContent = estimateTokens(fullPrompt);
+
+            // Also populate generate tab
+            if (userPrompt) {
+                document.getElementById('generatePrompt').value = fullPrompt;
+            }
+        }
+
+        function extractSection(text, sectionName) {
+            const lines = text.split('\n');
+            let capturing = false;
+            let result = [];
+            for (const line of lines) {
+                if (line.match(new RegExp(`^#{1,3}\\s*${sectionName}`, 'i'))) {
+                    capturing = true;
+                    continue;
+                }
+                if (capturing && line.match(/^#{1,3}\s/)) {
+                    break;
+                }
+                if (capturing) {
+                    result.push(line);
+                }
+            }
+            return result.join('\n').trim();
+        }
+
+        function estimateTokens(text) {
+            // Rough estimate: ~4 chars per token
+            return text ? Math.ceil(text.length / 4).toLocaleString() : '0';
+        }
+
+        function copySystemPrompt() {
+            const text = document.getElementById('systemPreview').textContent;
+            navigator.clipboard.writeText(text).then(() => alert('System prompt copied to clipboard!'));
+        }
+
+        function copyFullPrompt() {
+            const system = document.getElementById('systemPreview').textContent;
+            const user = document.getElementById('userPrompt').value;
+            const full = `SYSTEM:\n${system}\n\nUSER:\n${user}`;
+            navigator.clipboard.writeText(full).then(() => alert('Full prompt copied to clipboard!'));
+        }
+
+        // =====================
+        // OLLAMA GENERATION
+        // =====================
+        async function checkOllama() {
+            const statusEl = document.getElementById('ollamaStatus');
+            try {
+                const res = await fetch('http://localhost:11434/api/tags', { method: 'GET' });
+                if (res.ok) {
+                    statusEl.textContent = '✅ Ollama is running on localhost:11434';
+                    statusEl.className = 'ollama-status online';
+                    const data = await res.json();
+                    const modelSelect = document.getElementById('ollamaModel');
+                    modelSelect.innerHTML = '';
+                    data.models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.name;
+                        opt.textContent = m.name;
+                        modelSelect.appendChild(opt);
+                    });
+                    return;
+                }
+            } catch (e) {}
+            statusEl.textContent = '❌ Ollama not detected. See setup instructions below.';
+            statusEl.className = 'ollama-status offline';
+        }
+
+        async function generateWithOllama() {
+            const prompt = document.getElementById('generatePrompt').value;
+            const model = document.getElementById('ollamaModel').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const output = document.getElementById('generateOutput');
+
+            if (!prompt) {
+                alert('Please enter a prompt.');
+                return;
+            }
+
+            output.classList.remove('hidden');
+            output.innerHTML = '<em>Generating...</em>';
+
+            try {
+                const res = await fetch('http://localhost:11434/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            { role: 'system', content: 'You are a skilled writing assistant. Follow the style and rhetorical guidelines provided precisely.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        stream: false,
+                        options: { temperature: temperature, num_predict: 4000 }
+                    })
+                });
+
+                if (!res.ok) throw new Error('Ollama returned ' + res.status);
+                const data = await res.json();
+                const text = data.message?.content || data.response || 'No response';
+                output.innerHTML = markdownToHtml(text);
+            } catch (err) {
+                output.innerHTML = `<strong style="color:#c00">Error:</strong> ${err.message}<br><br>Make sure Ollama is running with CORS enabled:<br><code>OLLAMA_ORIGINS=* ollama serve</code>`;
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('generateOutput').classList.add('hidden');
+            document.getElementById('generateOutput').innerHTML = '';
+        }
+
+        function markdownToHtml(md) {
+            // Simple markdown to HTML
+            return md
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code style="background:#f4f4f4;padding:2px 4px;border-radius:3px;">$1</code>')
+                .replace(/```[\s\S]*?```/g, match => `<pre style="background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:6px;overflow-x:auto;">${match.slice(3,-3)}</pre>`)
+                .replace(/\n/g, '<br>');
+        }
+
+        // =====================
+        // NAVIGATION
+        // =====================
+        function switchPanel(name) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(name + 'Panel')?.classList.add('active');
+            document.querySelector(`[data-panel="${name}"]`)?.classList.add('active');
+        }
+
+        function showMainUI() {
+            document.getElementById('loadScreen').style.display = 'none';
+            switchPanel('compose');
+        }
+
+        // =====================
+        // MODAL
+        // =====================
+        function openModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').textContent = content;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal(event) {
+            if (!event || event.target === document.getElementById('modal') || event.target.closest('.modal-close')) {
+                document.getElementById('modal').classList.remove('active');
+            }
+        }
+
+        // =====================
+        // INIT
+        // =====================
+        // Auto-load if served via HTTP
+        if (window.location.protocol !== 'file:') {
+            loadViaHttp();
+        }
+        // Start on load screen
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    </script>
+</body>
+</html>

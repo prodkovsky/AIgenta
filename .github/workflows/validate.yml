@@ -1,0 +1,55 @@
+name: AIgenta Validation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    
+    - name: Run validation
+      run: python tests/validate.py
+    
+    - name: Generate search index
+      run: python tools/generate_search_index.py
+    
+    - name: Upload search index
+      uses: actions/upload-artifact@v4
+      with:
+        name: search-index
+        path: search-index.json
+    
+    - name: Upload validation results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: validation-results
+        path: validation-results.txt
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const results = fs.readFileSync('validation-results.txt', 'utf8');
+          const output = `## 🔍 AIgenta Validation Results\n\n\`\`\`\n${results}\n\`\`\``;
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          });
