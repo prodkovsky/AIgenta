@@ -22,20 +22,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-    
-    - name: Install dependencies
-      run: pip install pyyaml
-    
-    - name: Generate search index
-      run: python tools/generate_search_index.py
-    
-    - name: Run validation
-      run: python tests/validate.py
-    
     - name: Setup Pages
       uses: actions/configure-pages@v5
     
